@@ -20,5 +20,7 @@ COPY --from=builder /app/target/release/maxio /usr/local/bin/maxio
 ENV MAXIO_DATA_DIR="/data"
 EXPOSE 9000
 VOLUME ["/data"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD ["maxio", "healthcheck", "--url", "http://127.0.0.1:9000/healthz", "--timeout-ms", "2000"]
 
 ENTRYPOINT ["maxio"]

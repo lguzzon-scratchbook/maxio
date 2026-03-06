@@ -1,3 +1,4 @@
+use axum::http::StatusCode;
 use axum::Router;
 use axum::routing::get;
 use std::sync::Arc;
@@ -24,12 +25,17 @@ pub fn build_router(state: AppState) -> Router {
 
     Router::new()
         .nest("/api", console_router(state.clone()))
+        .route("/healthz", get(healthz))
         .route("/ui", get(ui_handler))
         .route("/ui/", get(ui_handler))
         .route("/ui/{*path}", get(ui_handler))
         .merge(s3_routes)
         .layer(axum::middleware::from_fn(request_id_middleware))
         .with_state(state)
+}
+
+async fn healthz() -> StatusCode {
+    StatusCode::OK
 }
 
 async fn request_id_middleware(

@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::Args;
 use std::env;
 
 fn first_env_value(keys: &[&str]) -> Option<String> {
@@ -21,8 +21,7 @@ fn default_region() -> String {
         .unwrap_or_else(|| "us-east-1".to_string())
 }
 
-#[derive(Parser, Debug, Clone)]
-#[command(name = "maxio", about = "S3-compatible object storage server", version = env!("MAXIO_VERSION"))]
+#[derive(Args, Debug, Clone)]
 pub struct Config {
     /// Port to listen on
     #[arg(long, env = "MAXIO_PORT", default_value = "9000")]
