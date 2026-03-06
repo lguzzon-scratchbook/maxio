@@ -476,6 +476,17 @@ fn extract_xml_tag(body: &str, tag: &str) -> Option<String> {
 // ---- Tests ----
 
 #[tokio::test]
+async fn test_healthz_is_public_and_returns_ok() {
+    let (base_url, _tmp) = start_server().await;
+    let resp = client()
+        .get(format!("{}/healthz", base_url))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), 200);
+}
+
+#[tokio::test]
 async fn test_auth_rejects_bad_key() {
     let (base_url, _tmp) = start_server().await;
 
