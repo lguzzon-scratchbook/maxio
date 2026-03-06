@@ -13,8 +13,8 @@ TMPDIR=$(mktemp -d)
 PASS=0
 FAIL=0
 
-export AWS_ACCESS_KEY_ID=minioadmin
-export AWS_SECRET_ACCESS_KEY=minioadmin
+export AWS_ACCESS_KEY_ID=maxioadmin
+export AWS_SECRET_ACCESS_KEY=maxioadmin
 export AWS_DEFAULT_REGION=us-east-1
 
 AWS="aws --endpoint-url $ENDPOINT"

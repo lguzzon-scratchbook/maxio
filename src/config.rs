@@ -8,12 +8,12 @@ fn first_env_value(keys: &[&str]) -> Option<String> {
 
 fn default_access_key() -> String {
     first_env_value(&["MINIO_ROOT_USER", "MINIO_ACCESS_KEY"])
-        .unwrap_or_else(|| "minioadmin".to_string())
+        .unwrap_or_else(|| "maxioadmin".to_string())
 }
 
 fn default_secret_key() -> String {
     first_env_value(&["MINIO_ROOT_PASSWORD", "MINIO_SECRET_KEY"])
-        .unwrap_or_else(|| "minioadmin".to_string())
+        .unwrap_or_else(|| "maxioadmin".to_string())
 }
 
 fn default_region() -> String {

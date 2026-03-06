@@ -43,7 +43,7 @@ cargo build --release
 
 The binary serves the web console at `/ui/` with proper MIME types, ETags, and cache headers (immutable for hashed assets, no-store for `index.html`).
 
-Defaults: port 9000, access/secret `minioadmin`/`minioadmin`, region `us-east-1`
+Defaults: port 9000, access/secret `maxioadmin`/`maxioadmin`, region `us-east-1`
 
 ## Development Workflow
 
@@ -167,7 +167,7 @@ All `fetch` catch blocks in UI components log errors via `console.error` with co
 brew install minio/stable/mc
 
 # Configure alias
-mc alias set maxio http://localhost:9000 minioadmin minioadmin
+mc alias set maxio http://localhost:9000 maxioadmin maxioadmin
 
 # Bucket operations
 mc mb maxio/test-bucket
@@ -193,8 +193,8 @@ mc rb maxio/test-bucket
 ### Testing with AWS CLI
 
 ```bash
-export AWS_ACCESS_KEY_ID=minioadmin
-export AWS_SECRET_ACCESS_KEY=minioadmin
+export AWS_ACCESS_KEY_ID=maxioadmin
+export AWS_SECRET_ACCESS_KEY=maxioadmin
 aws --endpoint-url http://localhost:9000 s3 mb s3://test-bucket
 aws --endpoint-url http://localhost:9000 s3 cp file.txt s3://test-bucket/file.txt
 aws --endpoint-url http://localhost:9000 s3 ls s3://test-bucket/
