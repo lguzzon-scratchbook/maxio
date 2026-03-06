@@ -80,15 +80,15 @@ services:
     volumes:
       - maxio-data:/data
     environment:
-      - MAXIO_ACCESS_KEY=minioadmin
-      - MAXIO_SECRET_KEY=minioadmin
+      - MAXIO_ACCESS_KEY=maxioadmin
+      - MAXIO_SECRET_KEY=maxioadmin
 ```
 
 ```bash
 docker compose up -d
 ```
 
-Open `http://localhost:9000/ui/` in your browser. Default credentials: `minioadmin` / `minioadmin`
+Open `http://localhost:9000/ui/` in your browser. Default credentials: `maxioadmin` / `maxioadmin`
 
 ## Configuration
 
@@ -97,8 +97,8 @@ Open `http://localhost:9000/ui/` in your browser. Default credentials: `minioadm
 | `MAXIO_PORT` | `--port` | `9000` | Listen port |
 | `MAXIO_ADDRESS` | `--address` | `0.0.0.0` | Bind address |
 | `MAXIO_DATA_DIR` | `--data-dir` | `./data` | Storage directory |
-| `MAXIO_ACCESS_KEY` | `--access-key` | `minioadmin` | Access key (aliases: `MINIO_ROOT_USER`, `MINIO_ACCESS_KEY`) |
-| `MAXIO_SECRET_KEY` | `--secret-key` | `minioadmin` | Secret key (aliases: `MINIO_ROOT_PASSWORD`, `MINIO_SECRET_KEY`) |
+| `MAXIO_ACCESS_KEY` | `--access-key` | `maxioadmin` | Access key (aliases: `MINIO_ROOT_USER`, `MINIO_ACCESS_KEY`) |
+| `MAXIO_SECRET_KEY` | `--secret-key` | `maxioadmin` | Secret key (aliases: `MINIO_ROOT_PASSWORD`, `MINIO_SECRET_KEY`) |
 | `MAXIO_REGION` | `--region` | `us-east-1` | S3 region (aliases: `MINIO_REGION_NAME`, `MINIO_REGION`) |
 | `MAXIO_ERASURE_CODING` | `--erasure-coding` | `false` | Enable erasure coding with per-chunk integrity checksums |
 | `MAXIO_CHUNK_SIZE` | `--chunk-size` | `10485760` (10MB) | Chunk size in bytes for erasure coding |
@@ -109,7 +109,7 @@ Open `http://localhost:9000/ui/` in your browser. Default credentials: `minioadm
 ### MinIO Client (mc)
 
 ```bash
-mc alias set maxio http://localhost:9000 minioadmin minioadmin
+mc alias set maxio http://localhost:9000 maxioadmin maxioadmin
 
 mc mb maxio/my-bucket
 mc cp file.txt maxio/my-bucket/file.txt
@@ -122,8 +122,8 @@ mc rb maxio/my-bucket
 ### AWS CLI
 
 ```bash
-export AWS_ACCESS_KEY_ID=minioadmin
-export AWS_SECRET_ACCESS_KEY=minioadmin
+export AWS_ACCESS_KEY_ID=maxioadmin
+export AWS_SECRET_ACCESS_KEY=maxioadmin
 
 aws --endpoint-url http://localhost:9000 s3 mb s3://my-bucket
 aws --endpoint-url http://localhost:9000 s3 cp file.txt s3://my-bucket/file.txt

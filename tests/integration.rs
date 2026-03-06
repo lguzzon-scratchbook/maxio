@@ -10,8 +10,8 @@ use sha2::{Digest, Sha256};
 
 type HmacSha256 = Hmac<Sha256>;
 
-const ACCESS_KEY: &str = "minioadmin";
-const SECRET_KEY: &str = "minioadmin";
+const ACCESS_KEY: &str = "maxioadmin";
+const SECRET_KEY: &str = "maxioadmin";
 const REGION: &str = "us-east-1";
 
 /// Spin up a test server on a random port, return the base URL.

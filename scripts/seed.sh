@@ -17,7 +17,7 @@ trap cleanup EXIT
 
 echo "Seeding maxio at $BASE ..."
 
-mc alias set "$ALIAS" "$BASE" minioadmin minioadmin --api s3v4 >/dev/null
+mc alias set "$ALIAS" "$BASE" maxioadmin maxioadmin --api s3v4 >/dev/null
 
 # Create buckets
 for bucket in uploads backups logs media archives; do

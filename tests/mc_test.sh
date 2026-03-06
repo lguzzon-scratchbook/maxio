@@ -85,7 +85,7 @@ echo "Data dir: $DATA_DIR"
 echo ""
 
 # --- Setup ---
-if mc alias set "$ALIAS" "http://localhost:$PORT" minioadmin minioadmin 2>&1 | grep -qi "error"; then
+if mc alias set "$ALIAS" "http://localhost:$PORT" maxioadmin maxioadmin 2>&1 | grep -qi "error"; then
     red "FAIL: alias set"
     FAIL=$((FAIL + 1))
 else
