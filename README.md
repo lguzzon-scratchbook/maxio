@@ -20,7 +20,8 @@ MaxIO is a lightweight, single-binary S3-compatible object storage server writte
 - **Pure Filesystem Storage** — No database. Buckets are directories, objects are files, metadata in `.meta.json` sidecars
 - **AWS Signature V4** — Compatible with `mc`, AWS CLI, and any S3 SDK
 - **Web Console** — Built-in UI at `/ui/` for browsing, uploading, and managing objects
-- **S3 API Coverage** — ListBuckets, CreateBucket, HeadBucket, DeleteBucket, GetBucketLocation, ListObjectsV1/V2, PutObject, GetObject, HeadObject, DeleteObject, DeleteObjects (batch), CopyObject, Multipart Upload
+- **S3 API Coverage** — ListBuckets, CreateBucket, HeadBucket, DeleteBucket, GetBucketLocation, ListObjectsV1/V2, ListObjectVersions, PutObject, GetObject, HeadObject, DeleteObject, DeleteObjects (batch), CopyObject, Multipart Upload (including UploadPartCopy), Object Tagging, CORS, Versioning
+- **Conditional Requests** — `If-Match`, `If-None-Match`, `If-Modified-Since`, `If-Unmodified-Since` headers (RFC 7232)
 - **Range Requests** — HTTP 206 Partial Content support via `Range` header on GetObject
 - **Checksum Verification** — CRC32, CRC32C, SHA-1, and SHA-256 checksums on upload with automatic validation and persistent storage
 - **Erasure Coding** — Optional chunked storage with per-chunk SHA-256 integrity verification and Reed-Solomon parity for automatic recovery from corrupted or missing data
@@ -135,8 +136,8 @@ aws --endpoint-url http://localhost:9000 s3 rb s3://my-bucket
 ## Roadmap
 
 - ~~Multipart upload~~, ~~presigned URLs~~, ~~CopyObject~~
-- CORS, ~~Range headers~~
-- Versioning, lifecycle rules
+- ~~CORS~~, ~~Range headers~~
+- ~~Versioning~~, lifecycle rules
 - Multi-user support
 - Distributed mode, ~~erasure coding~~, replication
 

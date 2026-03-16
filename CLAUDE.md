@@ -126,7 +126,11 @@ This runs both processes concurrently (Ctrl+C kills both):
 | HeadBucket | HEAD | `/{bucket}` |
 | DeleteBucket | DELETE | `/{bucket}` |
 | GetBucketLocation | GET | `/{bucket}?location` |
+| ListObjectsV1 | GET | `/{bucket}?prefix=&marker=&max-keys=&delimiter=` |
 | ListObjectsV2 | GET | `/{bucket}?list-type=2` |
+| ListObjectVersions | GET | `/{bucket}?versions` |
+| GetBucketVersioning | GET | `/{bucket}?versioning` |
+| PutBucketVersioning | PUT | `/{bucket}?versioning` |
 | DeleteObjects | POST | `/{bucket}?delete` |
 | PutObject | PUT | `/{bucket}/{key}` |
 | GetObject | GET | `/{bucket}/{key}` |
@@ -239,6 +243,6 @@ The web console (`ui/`) follows the Coolify design system. The full specificatio
 
 ## Roadmap
 
-- **Phase 2**: ~~Multipart upload~~, ~~presigned URLs~~, ~~CopyObject~~, ~~DeleteObjects batch~~, ~~CORS~~, Range headers
-- **Phase 3**: ~~Web console (SPA at `/ui/`)~~, versioning, lifecycle rules, multi-user, metrics
-- **Phase 4**: Distributed mode, erasure coding, replication
+- **Phase 2**: ~~Multipart upload~~, ~~presigned URLs~~, ~~CopyObject~~, ~~DeleteObjects batch~~, ~~CORS~~, ~~Range headers~~
+- **Phase 3**: ~~Web console (SPA at `/ui/`)~~, ~~versioning~~, lifecycle rules, multi-user, metrics
+- **Phase 4**: Distributed mode, ~~erasure coding~~, replication
