@@ -143,17 +143,15 @@ ensure_maxio() {
         fi
         return
     fi
-    # Check common locations (cache, cwd, cargo target)
-    if [ -x "$BIN_DIR/maxio" ]; then
-        MAXIO_BIN="$BIN_DIR/maxio"
-    elif [ -f ./maxio ]; then
+    # Check common locations (cwd, cargo target)
+    if [ -f ./maxio ]; then
         MAXIO_BIN="./maxio"
     elif [ -f ./target/release/maxio ]; then
         MAXIO_BIN="./target/release/maxio"
     else
-        # Download latest release from GitHub
+        # Always download latest release from GitHub (don't cache — version matters)
         mkdir -p "$BIN_DIR"
-        bold "Downloading maxio..."
+        bold "Downloading maxio (latest release)..."
         local arch url
         case "$PLATFORM" in
             linux-amd64)  arch="amd64" ;;
