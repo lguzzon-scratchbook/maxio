@@ -6,7 +6,10 @@ use rand::RngExt;
 use sha2::Sha256;
 use std::path::{Component, Path, PathBuf};
 use tokio::fs;
-use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, BufReader, BufWriter};
+
+const IO_BUFFER_SIZE: usize = 256 * 1024;
+const SMALL_OBJECT_THRESHOLD: u64 = 256 * 1024;
 
 enum ChecksumHasher {
     Crc32(crc32fast::Hasher),
@@ -217,8 +220,8 @@ impl FilesystemStorage {
         self.ec_dir(bucket, key).join("manifest.json")
     }
 
-    fn is_chunked_path(ec_dir: &Path) -> bool {
-        ec_dir.is_dir()
+    async fn is_chunked_path(ec_dir: &Path) -> bool {
+        matches!(fs::metadata(ec_dir).await, Ok(m) if m.is_dir())
     }
 
     async fn read_manifest(&self, bucket: &str, key: &str) -> Result<ChunkManifest, StorageError> {
@@ -279,11 +282,12 @@ impl FilesystemStorage {
             fs::create_dir_all(parent).await?;
         }
 
-        let mut file = fs::File::create(&obj_path).await?;
+        let file = fs::File::create(&obj_path).await?;
+        let mut writer = BufWriter::with_capacity(IO_BUFFER_SIZE, file);
         let mut hasher = Md5::new();
         let mut checksum_hasher = checksum.as_ref().map(|(algo, _)| ChecksumHasher::new(*algo));
         let mut size: u64 = 0;
-        let mut buf = vec![0u8; 64 * 1024];
+        let mut buf = vec![0u8; IO_BUFFER_SIZE];
 
         loop {
             let n = body.read(&mut buf).await?;
@@ -295,9 +299,9 @@ impl FilesystemStorage {
                 ch.update(&buf[..n]);
             }
             size += n as u64;
-            tokio::io::AsyncWriteExt::write_all(&mut file, &buf[..n]).await?;
+            writer.write_all(&buf[..n]).await?;
         }
-        file.flush().await?;
+        writer.flush().await?;
 
         let etag = hex::encode(hasher.finalize());
         let etag_quoted = format!("\"{}\"", etag);
@@ -381,7 +385,7 @@ impl FilesystemStorage {
         let mut chunks: Vec<ChunkInfo> = Vec::new();
         let mut chunk_index: u32 = 0;
 
-        let mut read_buf = vec![0u8; 64 * 1024];
+        let mut read_buf = vec![0u8; IO_BUFFER_SIZE];
         let mut chunk_buf = Vec::with_capacity(self.chunk_size as usize);
 
         loop {
@@ -590,9 +594,9 @@ impl FilesystemStorage {
         let mut chunk_index: u32 = 0;
         let mut chunk_buf = Vec::with_capacity(self.chunk_size as usize);
 
+        let mut buf = vec![0u8; IO_BUFFER_SIZE];
         for part in selected {
             let mut part_file = fs::File::open(self.part_path(bucket, upload_id, part.part_number)).await?;
-            let mut buf = vec![0u8; 64 * 1024];
             loop {
                 let n = part_file.read(&mut buf).await?;
                 if n == 0 {
@@ -758,12 +762,22 @@ impl FilesystemStorage {
         validate_key(key)?;
         let meta = self.read_object_meta(bucket, key).await?;
         let ec_dir = self.ec_dir(bucket, key);
-        if Self::is_chunked_path(&ec_dir) {
+        if Self::is_chunked_path(&ec_dir).await {
             let manifest = self.read_manifest(bucket, key).await?;
             let reader = VerifiedChunkReader::new(ec_dir, manifest);
             return Ok((Box::pin(reader), meta));
         }
         let obj_path = self.object_path(bucket, key);
+        if meta.size <= SMALL_OBJECT_THRESHOLD {
+            let data = fs::read(&obj_path).await.map_err(|e| {
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    StorageError::NotFound(key.to_string())
+                } else {
+                    StorageError::Io(e)
+                }
+            })?;
+            return Ok((Box::pin(std::io::Cursor::new(data)), meta));
+        }
         let file = fs::File::open(&obj_path).await.map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
                 StorageError::NotFound(key.to_string())
@@ -771,7 +785,7 @@ impl FilesystemStorage {
                 StorageError::Io(e)
             }
         })?;
-        let reader = BufReader::new(file);
+        let reader = BufReader::with_capacity(IO_BUFFER_SIZE, file);
         Ok((Box::pin(reader), meta))
     }
 
@@ -785,12 +799,25 @@ impl FilesystemStorage {
         validate_key(key)?;
         let meta = self.read_object_meta(bucket, key).await?;
         let ec_dir = self.ec_dir(bucket, key);
-        if Self::is_chunked_path(&ec_dir) {
+        if Self::is_chunked_path(&ec_dir).await {
             let manifest = self.read_manifest(bucket, key).await?;
             let reader = VerifiedChunkReader::with_range(ec_dir, manifest, offset, length);
             return Ok((Box::pin(reader), meta));
         }
         let obj_path = self.object_path(bucket, key);
+        if length <= SMALL_OBJECT_THRESHOLD {
+            let mut file = fs::File::open(&obj_path).await.map_err(|e| {
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    StorageError::NotFound(key.to_string())
+                } else {
+                    StorageError::Io(e)
+                }
+            })?;
+            file.seek(std::io::SeekFrom::Start(offset)).await.map_err(StorageError::Io)?;
+            let mut data = vec![0u8; length as usize];
+            file.read_exact(&mut data).await.map_err(StorageError::Io)?;
+            return Ok((Box::pin(std::io::Cursor::new(data)), meta));
+        }
         let mut file = fs::File::open(&obj_path).await.map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
                 StorageError::NotFound(key.to_string())
@@ -800,7 +827,7 @@ impl FilesystemStorage {
         })?;
         file.seek(std::io::SeekFrom::Start(offset)).await.map_err(StorageError::Io)?;
         let limited = file.take(length);
-        let reader = BufReader::new(limited);
+        let reader = BufReader::with_capacity(IO_BUFFER_SIZE, limited);
         Ok((Box::pin(reader), meta))
     }
 
@@ -947,25 +974,26 @@ impl FilesystemStorage {
         }
 
         let part_path = self.part_path(bucket, upload_id, part_number);
-        let mut file = fs::File::create(&part_path).await?;
+        let file = fs::File::create(&part_path).await?;
+        let mut writer = BufWriter::with_capacity(IO_BUFFER_SIZE, file);
         let mut hasher = Md5::new();
         let mut checksum_hasher = checksum.as_ref().map(|(algo, _)| ChecksumHasher::new(*algo));
         let mut size: u64 = 0;
-        let mut buf = vec![0u8; 64 * 1024];
+        let mut buf = vec![0u8; IO_BUFFER_SIZE];
 
         loop {
             let n = body.read(&mut buf).await?;
             if n == 0 {
                 break;
             }
-            file.write_all(&buf[..n]).await?;
+            writer.write_all(&buf[..n]).await?;
             hasher.update(&buf[..n]);
             if let Some(ref mut ch) = checksum_hasher {
                 ch.update(&buf[..n]);
             }
             size += n as u64;
         }
-        file.flush().await?;
+        writer.flush().await?;
 
         // Validate and compute checksum
         let (checksum_algorithm, checksum_value) = if let Some((algo, expected)) = checksum {
@@ -1044,19 +1072,20 @@ impl FilesystemStorage {
         if let Some(parent) = obj_path.parent() {
             fs::create_dir_all(parent).await?;
         }
-        let mut out = fs::File::create(&obj_path).await?;
+        let out = fs::File::create(&obj_path).await?;
+        let mut writer = BufWriter::with_capacity(IO_BUFFER_SIZE, out);
         let mut total_size = 0u64;
         let mut etag_hasher = Md5::new();
+        let mut buf = vec![0u8; IO_BUFFER_SIZE];
 
         for part in &selected {
             let mut part_file = fs::File::open(self.part_path(bucket, upload_id, part.part_number)).await?;
-            let mut buf = vec![0u8; 64 * 1024];
             loop {
                 let n = part_file.read(&mut buf).await?;
                 if n == 0 {
                     break;
                 }
-                out.write_all(&buf[..n]).await?;
+                writer.write_all(&buf[..n]).await?;
                 total_size += n as u64;
             }
 
@@ -1064,7 +1093,7 @@ impl FilesystemStorage {
                 .map_err(|_| StorageError::InvalidKey("invalid part etag".into()))?;
             etag_hasher.update(raw_md5);
         }
-        out.flush().await?;
+        writer.flush().await?;
 
         let etag = format!("\"{}-{}\"", hex::encode(etag_hasher.finalize()), selected.len());
 
@@ -1705,7 +1734,7 @@ impl FilesystemStorage {
                 StorageError::Io(e)
             }
         })?;
-        Ok((Box::pin(BufReader::new(file)), meta))
+        Ok((Box::pin(BufReader::with_capacity(IO_BUFFER_SIZE, file)), meta))
     }
 
     pub async fn head_object_version(

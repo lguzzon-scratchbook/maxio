@@ -407,7 +407,7 @@ pub async fn download_object(
 
     let filename = key.rsplit('/').next().unwrap_or(&key);
     let safe_filename = sanitize_filename(filename);
-    let stream = tokio_util::io::ReaderStream::new(reader);
+    let stream = tokio_util::io::ReaderStream::with_capacity(reader, 256 * 1024);
     let body = axum::body::Body::from_stream(stream);
 
     Response::builder()
@@ -659,7 +659,7 @@ pub async fn download_version(
 
     let filename = key.rsplit('/').next().unwrap_or(&key);
     let safe_filename = sanitize_filename(filename);
-    let stream = tokio_util::io::ReaderStream::new(reader);
+    let stream = tokio_util::io::ReaderStream::with_capacity(reader, 256 * 1024);
     let body = axum::body::Body::from_stream(stream);
 
     Response::builder()

@@ -547,7 +547,7 @@ pub async fn get_object(
                 _ => S3Error::internal(e),
             })?;
 
-        let stream = ReaderStream::new(reader);
+        let stream = ReaderStream::with_capacity(reader, 256 * 1024);
         let body = Body::from_stream(stream);
         return Ok(Response::builder()
             .status(StatusCode::PARTIAL_CONTENT)
@@ -599,7 +599,7 @@ pub async fn get_object(
                         _ => S3Error::internal(e),
                     })?;
 
-                let stream = ReaderStream::new(reader);
+                let stream = ReaderStream::with_capacity(reader, 256 * 1024);
                 let body = Body::from_stream(stream);
 
                 return Ok(Response::builder()
@@ -654,7 +654,7 @@ pub async fn get_object(
         };
     }
 
-    let stream = ReaderStream::new(reader);
+    let stream = ReaderStream::with_capacity(reader, 256 * 1024);
     let body = Body::from_stream(stream);
 
     let mut builder = Response::builder()

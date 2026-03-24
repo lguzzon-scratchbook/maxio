@@ -102,13 +102,6 @@ pub struct ListBucketResultV1 {
 }
 
 #[derive(Serialize)]
-#[serde(rename = "LocationConstraint")]
-pub struct LocationConstraint {
-    #[serde(rename = "$text")]
-    pub location: String,
-}
-
-#[derive(Serialize)]
 #[serde(rename = "InitiateMultipartUploadResult")]
 pub struct InitiateMultipartUploadResult {
     #[serde(rename = "Bucket")]
